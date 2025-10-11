@@ -1,0 +1,179 @@
+<!DOCTYPE html>
+<html lang="ja">
+<head>
+<meta charset="UTF-8" />
+<meta name="viewport" content="width=device-width, initial-scale=1" />
+<title>バーイベント注文フォーム</title>
+<style>
+  :root { --card:#fff; --bg:#f6f7fb; --border:#e6e8ef; --txt:#111; --muted:#666; }
+  body { margin:0; background:var(--bg); font-family:system-ui,-apple-system,Segoe UI,Roboto,"ヒラギノ角ゴ ProN","Hiragino Kaku Gothic ProN","メイリオ",Meiryo,sans-serif; }
+  .wrap { max-width:760px; margin:24px auto; padding:16px; }
+  .card { background:var(--card); border:1px solid var(--border); border-radius:16px; padding:20px; box-shadow:0 2px 10px rgba(0,0,0,.04); }
+  h1 { margin:0 0 12px; font-size:22px; }
+  .row { margin:14px 0; }
+  label { font-weight:600; }
+  input[type="text"], textarea { width:100%; padding:10px 12px; border:1px solid var(--border); border-radius:10px; font-size:16px; }
+  textarea { min-height:80px; resize:vertical; }
+  .cat { border:1px dashed var(--border); border-radius:12px; padding:12px; margin-top:12px; }
+  .cat h3 { margin:0 0 10px; font-size:18px; display:flex; align-items:center; gap:8px; }
+  .items { display:grid; grid-template-columns:1fr auto; gap:8px 12px; margin:8px 0 0; }
+  .item-name { display:flex; align-items:center; gap:6px; }
+  .qty { width:80px; }
+  .muted { color:var(--muted); font-size:12px; }
+  .btn { background:#111; color:#fff; border:none; padding:12px 16px; border-radius:10px; font-size:16px; cursor:pointer; }
+  .btn:disabled { opacity:.5; cursor:not-allowed; }
+  #result { margin-top:14px; font-weight:700; }
+</style>
+</head>
+<body>
+<div class="wrap">
+  <div class="card">
+    <h1>ご注文フォーム</h1>
+    <div class="row">
+      <label for="customerId">お客様番号（半角数字）</label>
+      <input type="text" id="customerId" inputmode="numeric" pattern="[0-9]+" placeholder="例: 123" required />
+      <div class="muted">※半角数字のみ。英字・全角は不可。</div>
+    </div>
+
+    <!-- カテゴリ：チェックで詳細を開く -->
+    <div id="categories"></div>
+
+    <div class="row">
+      <label for="note">備考（任意）</label>
+      <textarea id="note" placeholder="アレルギー、提供タイミングなど自由に記述ください"></textarea>
+    </div>
+
+    <button class="btn" id="submitBtn">送信</button>
+    <div id="result"></div>
+  </div>
+</div>
+
+<script>
+/** ★ここにGASのWebアプリURL（/exec）を貼る */
+const GAS_URL = "★GASの/exec URL★";
+
+/** 価格定義（フロント表示用）。最終計算はサーバが再計算します */
+const PRICES = {
+  'ソフトドリンク': { 'コーラ': 600, '烏龍茶': 600, 'オレンジジュース': 600, 'ジンジャーエール': 600 },
+  'アルコール': { '生ビール': 800, 'ハイボール': 800, 'カシスオレンジ': 800 },
+  'スペドリ': { 'スペドリ': 700 },
+  'ミニシャン': { 'ミニシャン': 5000 },
+  'シャンパン': { 'シャンパン': 10000 },
+  'シャンメリー': { 'シャンメリー': 1000 }
+};
+
+// カテゴリ構築
+const categoriesEl = document.getElementById('categories');
+
+function renderCategory(name, itemsObj) {
+  const hasDetails = Object.keys(itemsObj).length > 1 || name === 'ソフトドリンク' || name === 'アルコール';
+
+  const cat = document.createElement('div');
+  cat.className = 'cat';
+
+  const h = document.createElement('h3');
+  const checkbox = document.createElement('input');
+  checkbox.type = 'checkbox';
+  checkbox.id = `cat-${name}`;
+  h.appendChild(checkbox);
+  const label = document.createElement('span');
+  label.textContent = name;
+  h.appendChild(label);
+  cat.appendChild(h);
+
+  // 明細エリア
+  const items = document.createElement('div');
+  items.className = 'items';
+  items.style.display = 'none';
+
+  // 明細行（数量入力）
+  for (const itemName of Object.keys(itemsObj)) {
+    const price = itemsObj[itemName];
+
+    const nameEl = document.createElement('div');
+    nameEl.className = 'item-name';
+    nameEl.textContent = `${itemName} ¥${price}`;
+
+    const qty = document.createElement('input');
+    qty.type = 'number';
+    qty.min = '0';
+    qty.value = '0';
+    qty.className = 'qty';
+    qty.dataset.category = name;
+    qty.dataset.name = itemName;
+
+    items.appendChild(nameEl);
+    items.appendChild(qty);
+  }
+  cat.appendChild(items);
+
+  // 単一アイテムカテゴリ用（スペドリ等）→ 数量1フィールドだけ見せる
+  if (!hasDetails) {
+    items.style.display = 'grid';
+  }
+
+  // チェックで明細の開閉
+  checkbox.addEventListener('change', () => {
+    items.style.display = checkbox.checked ? 'grid' : 'none';
+    // 閉じたときは数量リセット
+    if (!checkbox.checked) {
+      items.querySelectorAll('input[type="number"]').forEach(inp => inp.value = '0');
+    }
+  });
+
+  categoriesEl.appendChild(cat);
+}
+
+for (const catName of Object.keys(PRICES)) {
+  renderCategory(catName, PRICES[catName]);
+}
+
+// 送信
+document.getElementById('submitBtn').addEventListener('click', async () => {
+  const customerId = document.getElementById('customerId').value.trim();
+  if (!/^\d+$/.test(customerId)) {
+    alert('お客様番号は半角数字のみです');
+    return;
+  }
+
+  // 数量>0の明細を拾う
+  const orders = [];
+  document.querySelectorAll('.qty').forEach(inp => {
+    const qty = Number(inp.value || 0);
+    if (qty > 0) {
+      const category = inp.dataset.category;
+      const name = inp.dataset.name;
+      orders.push({ category, name, qty });
+    }
+  });
+
+  if (orders.length === 0) {
+    alert('注文がありません');
+    return;
+  }
+
+  const note = document.getElementById('note').value.trim();
+
+  // 送信（JSON）
+  try {
+    const res = await fetch(GAS_URL, {
+      method: 'POST',
+      headers: { 'Content-Type': 'application/json' },
+      body: JSON.stringify({ customerId, orders, note })
+    });
+    const json = await res.json();
+    if (json.success) {
+      document.getElementById('result').innerHTML =
+        `今回の合計：¥${Number(json.thisTotal).toLocaleString()}<br>` +
+        `これまでの累計：¥${Number(json.cumulative).toLocaleString()}`;
+      // 成功後は数量を0に戻す等のリセットも可
+    } else {
+      document.getElementById('result').textContent = 'エラー：' + (json.error || 'unknown');
+    }
+  } catch (err) {
+    document.getElementById('result').textContent = '通信エラー：' + err.message;
+  }
+});
+</script>
+</body>
+</html>
