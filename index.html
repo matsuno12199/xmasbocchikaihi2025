@@ -16,17 +16,20 @@
     --accent-green:#2a9d8f;
     --btn-shadow:0 4px 8px rgba(0,0,0,0.15);
   }
+
   body {
     margin:0;
     background:var(--bg);
     font-family: "Nunito", "ヒラギノ角ゴ ProN", "Meiryo", sans-serif;
     color:var(--txt);
   }
+
   .wrap {
     max-width:480px;
     margin:0 auto;
     padding:16px;
   }
+
   .card {
     background:var(--card);
     border-radius:16px;
@@ -35,6 +38,7 @@
     border:3px solid var(--accent-green);
     background-image: radial-gradient(circle at top left, #fff5f5, #f9fffa);
   }
+
   h1 {
     text-align:center;
     font-size:22px;
@@ -47,41 +51,97 @@
     font-size:28px;
     margin-top:4px;
   }
+
   .row { margin:16px 0; }
   label { font-weight:600; color:var(--accent-green); }
+
   input, textarea {
-    width:100%; padding:10px; border-radius:10px; border:2px solid var(--accent-green);
+    width:100%;
+    padding:10px;
+    border-radius:10px;
+    border:2px solid var(--accent-green);
     font-size:16px;
+    box-sizing:border-box;
   }
   textarea { min-height:80px; resize:vertical; }
+
+  /* --- 商品カテゴリ --- */
   .cat {
-    border:2px dashed var(--accent-green); border-radius:12px;
-    padding:12px; margin-top:14px; background:#fffefa;
+    border:2px dashed var(--accent-green);
+    border-radius:12px;
+    padding:14px;
+    margin-top:16px;
+    background:#fffefa;
   }
+
   .cat h3 {
-    margin:0; font-size:18px; color:var(--accent-red);
-    display:flex; justify-content:space-between; align-items:center;
+    margin:0;
+    font-size:18px;
+    color:var(--accent-red);
+    display:flex;
+    justify-content:space-between;
+    align-items:center;
+    padding:2px 4px;
+    white-space:nowrap; /* ← 改行防止 */
   }
+
+  .cat h3 span {
+    flex-grow:1;
+    padding-right:10px;
+  }
+
+  .cat input[type="checkbox"] {
+    width:22px;
+    height:22px;
+    accent-color: var(--accent-green);
+  }
+
   .items {
     display:none;
     grid-template-columns:1fr auto;
-    gap:10px 8px; margin-top:8px;
+    gap:10px 8px;
+    margin-top:10px;
+    padding-left:4px;
   }
+
   .qty {
-    width:70px; padding:6px; text-align:center;
-    border:1px solid var(--border); border-radius:8px;
+    width:70px;
+    padding:6px;
+    text-align:center;
+    border:1px solid var(--border);
+    border-radius:8px;
+    font-size:15px;
   }
+
+  /* ボタン */
   .btn {
     width:100%;
     background:linear-gradient(135deg, var(--accent-red), var(--accent-green));
-    color:#fff; padding:14px; border:none; border-radius:12px;
-    font-size:18px; cursor:pointer; box-shadow:var(--btn-shadow);
+    color:#fff;
+    padding:14px;
+    border:none;
+    border-radius:12px;
+    font-size:18px;
+    cursor:pointer;
+    box-shadow:var(--btn-shadow);
     margin-top:10px;
   }
-  #result { margin-top:18px; text-align:center; font-weight:700; color:var(--accent-green); }
+
+  #result {
+    margin-top:18px;
+    text-align:center;
+    font-weight:700;
+    color:var(--accent-green);
+  }
+
+  /* 注文確認 */
   .confirm-box {
-    white-space:pre-wrap; padding:12px; border-radius:10px;
-    background:#fff; border:2px solid var(--accent-green); margin-top:12px;
+    white-space:pre-wrap;
+    padding:12px;
+    border-radius:10px;
+    background:#fff;
+    border:2px solid var(--accent-green);
+    margin-top:12px;
   }
 </style>
 </head>
@@ -92,16 +152,13 @@
 
     <h1>ご注文フォーム</h1>
 
-    <!-- お客様番号 -->
     <div class="row">
       <label>お客様番号（半角数字）</label>
-      <input type="text" id="customerId" inputmode="numeric" pattern="[0-9]+" placeholder="例: 101" />
+      <input type="text" id="customerId" inputmode="numeric" placeholder="例: 101">
     </div>
 
-    <!-- メニュー表示エリア -->
     <div id="categories"></div>
 
-    <!-- 備考 -->
     <div class="row">
       <label>備考（任意）</label>
       <textarea id="note" placeholder="自由に記述してください"></textarea>
@@ -121,26 +178,32 @@
 /*****************************************
  * API URL（Workers）
  *****************************************/
-const API_MENU  = "https://mute-forest-8746.matsuno12199.workers.dev/?mode=menu";
-const API_ORDER = "https://mute-forest-8746.matsuno12199.workers.dev/";
+const API_MENU  = "https://mute-forest-8746.matsuno12199.workers.dev/menu";
+const API_ORDER = "https://mute-forest-8746.matsuno12199.workers.dev/order";
+
+let MENU = {}; // メニュー保持
+
 
 /*****************************************
- * メニュー読み込み
+ * メニュー取得
  *****************************************/
-let MENU = {};
-
 async function loadMenu() {
-  const r = await fetch(API_MENU);
-  const json = await r.json();
+  try {
+    const r = await fetch(API_MENU);
+    const json = await r.json();
 
-  if (!json.success) {
+    if (!json.success) {
+      alert("メニュー取得に失敗しました");
+      return;
+    }
+
+    MENU = json.menu;
+    renderMenu();
+  } catch (e) {
     alert("メニュー取得に失敗しました");
-    return;
   }
-
-  MENU = json.menu;
-  renderMenu();
 }
+
 
 /*****************************************
  * メニュー描画
@@ -153,18 +216,26 @@ function renderMenu() {
     const catBox = document.createElement("div");
     catBox.className = "cat";
 
+    // --- 見出し -----------------------------------
     const h = document.createElement("h3");
+
+    const title = document.createElement("span");
+    title.textContent = cat;
+
     const chk = document.createElement("input");
     chk.type = "checkbox";
-    h.append(cat, chk);
+
+    h.appendChild(title);
+    h.appendChild(chk);
     catBox.appendChild(h);
 
+    // --- 明細 -----------------------------------
     const itemsDiv = document.createElement("div");
     itemsDiv.className = "items";
 
-    MENU[cat].forEach(item => {
+    MENU[cat].forEach(i => {
       const name = document.createElement("div");
-      name.textContent = `${item.name} ¥${item.price}`;
+      name.textContent = `${i.name} ¥${i.price}`;
 
       const qty = document.createElement("input");
       qty.type = "number";
@@ -172,7 +243,7 @@ function renderMenu() {
       qty.max = 9;
       qty.value = 0;
       qty.className = "qty";
-      qty.dataset.name = item.name;
+      qty.dataset.name = i.name;
 
       itemsDiv.append(name, qty);
     });
@@ -184,21 +255,11 @@ function renderMenu() {
       }
     });
 
-    catBox.append(itemsDiv);
-    area.append(catBox);
+    catBox.appendChild(itemsDiv);
+    area.appendChild(catBox);
   });
 }
 
-/*****************************************
- * 明細収集
- *****************************************/
-function collectOrders() {
-  const arr = [];
-  document.querySelectorAll(".qty").forEach(q => {
-    if (Number(q.value) > 0) arr.push({ name: q.dataset.name, qty: Number(q.value) });
-  });
-  return arr;
-}
 
 /*****************************************
  * 注文内容確認
@@ -217,6 +278,19 @@ document.getElementById("confirmBtn").onclick = () => {
 
   document.getElementById("submitBtn").style.display = "block";
 };
+
+
+/*****************************************
+ * 明細収集
+ *****************************************/
+function collectOrders() {
+  const arr = [];
+  document.querySelectorAll(".qty").forEach(q => {
+    if (Number(q.value) > 0) arr.push({ name: q.dataset.name, qty: Number(q.value) });
+  });
+  return arr;
+}
+
 
 /*****************************************
  * 注文送信
@@ -246,11 +320,11 @@ document.getElementById("submitBtn").onclick = async () => {
   document.getElementById("confirmArea").innerHTML = "";
 };
 
+
 /*****************************************
  * 初回ロード
  *****************************************/
 loadMenu();
 </script>
-
 </body>
 </html>
