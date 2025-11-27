@@ -4,296 +4,252 @@
 <meta charset="UTF-8" />
 <meta name="viewport" content="width=device-width, initial-scale=1" />
 <title>🎅 クリスマスバーイベント注文フォーム 🎁</title>
+
 <style>
   :root {
-    --bg:#fff8f8; --card:#ffffff; --border:#e5e5e5; --txt:#222; --muted:#777;
-    --accent-red:#e63946; --accent-green:#2a9d8f; --btn-shadow:0 4px 8px rgba(0,0,0,0.15);
-    --overlay: rgba(0,0,0,.4);
+    --bg:#fff8f8;
+    --card:#ffffff;
+    --border:#e5e5e5;
+    --txt:#222;
+    --muted:#777;
+    --accent-red:#e63946;
+    --accent-green:#2a9d8f;
+    --btn-shadow:0 4px 8px rgba(0,0,0,0.15);
   }
-  body { margin:0; background:var(--bg); font-family:"Nunito","ヒラギノ角ゴ ProN","Meiryo",sans-serif; color:var(--txt); }
-  .wrap { max-width:480px; margin:0 auto; padding:16px; }
+  body {
+    margin:0;
+    background:var(--bg);
+    font-family: "Nunito", "ヒラギノ角ゴ ProN", "Meiryo", sans-serif;
+    color:var(--txt);
+  }
+  .wrap {
+    max-width:480px;
+    margin:0 auto;
+    padding:16px;
+  }
   .card {
-    background:var(--card); border-radius:16px; padding:24px; box-shadow:0 4px 12px rgba(0,0,0,.08);
-    border:3px solid var(--accent-green); background-image: radial-gradient(circle at top left, #fff5f5, #f9fffa);
+    background:var(--card);
+    border-radius:16px;
+    padding:24px;
+    box-shadow:0 4px 12px rgba(0,0,0,.08);
+    border:3px solid var(--accent-green);
+    background-image: radial-gradient(circle at top left, #fff5f5, #f9fffa);
   }
-  h1 { text-align:center; font-size:22px; color:var(--accent-red); margin-bottom:12px; }
-  h1::after { content:"🎄"; display:block; font-size:28px; margin-top:4px; }
-  .row { margin:18px 0; }
-  label { font-weight:600; font-size:15px; color:var(--accent-green); }
-  input[type="text"], textarea {
-    width:100%; padding:10px 12px; border:2px solid var(--accent-green); border-radius:10px;
-    font-size:16px; box-sizing:border-box; background:#fff;
+  h1 {
+    text-align:center;
+    font-size:22px;
+    color:var(--accent-red);
+    margin-bottom:12px;
+  }
+  h1::after {
+    content:"🎄";
+    display:block;
+    font-size:28px;
+    margin-top:4px;
+  }
+  .row { margin:16px 0; }
+  label { font-weight:600; color:var(--accent-green); }
+  input, textarea {
+    width:100%; padding:10px; border-radius:10px; border:2px solid var(--accent-green);
+    font-size:16px;
   }
   textarea { min-height:80px; resize:vertical; }
-  .cat { border:2px dashed var(--accent-green); border-radius:12px; padding:12px; margin-top:14px; background:#fffefa; }
-  .cat h3 { margin:0; font-size:18px; color:var(--accent-red); display:flex; align-items:center; justify-content:space-between; }
-  .cat input[type="checkbox"] { width:22px; height:22px; accent-color: var(--accent-green); }
-  .items { display:none; grid-template-columns:1fr auto; gap:10px 8px; margin-top:8px; }
-  .item-name { font-size:15px; }
+  .cat {
+    border:2px dashed var(--accent-green); border-radius:12px;
+    padding:12px; margin-top:14px; background:#fffefa;
+  }
+  .cat h3 {
+    margin:0; font-size:18px; color:var(--accent-red);
+    display:flex; justify-content:space-between; align-items:center;
+  }
+  .items {
+    display:none;
+    grid-template-columns:1fr auto;
+    gap:10px 8px; margin-top:8px;
+  }
   .qty {
-    width:64px; padding:6px; font-size:15px; border:1px solid var(--border); border-radius:8px; text-align:center;
+    width:70px; padding:6px; text-align:center;
+    border:1px solid var(--border); border-radius:8px;
   }
-  .muted { color:var(--muted); font-size:12px; margin-top:4px; }
   .btn {
-    width:100%; background:linear-gradient(135deg, var(--accent-red), var(--accent-green)); color:#fff; border:none;
-    padding:14px; border-radius:12px; font-size:18px; cursor:pointer; box-shadow:var(--btn-shadow); transition:.2s;
+    width:100%;
+    background:linear-gradient(135deg, var(--accent-red), var(--accent-green));
+    color:#fff; padding:14px; border:none; border-radius:12px;
+    font-size:18px; cursor:pointer; box-shadow:var(--btn-shadow);
+    margin-top:10px;
   }
-  .btn:hover { filter:brightness(1.1); }
-  #result { margin-top:16px; font-weight:700; text-align:center; color:var(--accent-green); }
-
-  /* モーダル */
-  .modal-backdrop { position:fixed; inset:0; background:var(--overlay); display:none; align-items:center; justify-content:center; padding:16px; z-index:1000; }
-  .modal { background:#fff; border-radius:16px; max-width:480px; width:100%; box-shadow:0 8px 20px rgba(0,0,0,.25); border:2px solid var(--accent-green); padding:20px; }
-  .modal h2 { margin:0 0 12px; color:var(--accent-red); font-size:20px; text-align:center; }
-  .modal .content { max-height:50vh; overflow:auto; font-size:15px; }
-  .modal .actions { display:flex; gap:10px; margin-top:16px; }
-  .btn-secondary, .btn-primary { flex:1; padding:12px; border-radius:10px; font-size:16px; cursor:pointer; border:none; }
-  .btn-secondary { background:#eee; color:#333; }
-  .btn-primary { background:linear-gradient(135deg, var(--accent-red), var(--accent-green)); color:#fff; }
-  .center { text-align:center; }
+  #result { margin-top:18px; text-align:center; font-weight:700; color:var(--accent-green); }
+  .confirm-box {
+    white-space:pre-wrap; padding:12px; border-radius:10px;
+    background:#fff; border:2px solid var(--accent-green); margin-top:12px;
+  }
 </style>
 </head>
+
 <body>
 <div class="wrap">
   <div class="card">
+
     <h1>ご注文フォーム</h1>
 
+    <!-- お客様番号 -->
     <div class="row">
-      <label for="customerId">お客様番号（半角数字）</label>
-      <input type="text" id="customerId" inputmode="numeric" pattern="[0-9]+" placeholder="例: 123" required />
-      <div class="muted">※半角数字のみ。英字・全角は不可。</div>
+      <label>お客様番号（半角数字）</label>
+      <input type="text" id="customerId" inputmode="numeric" pattern="[0-9]+" placeholder="例: 101" />
     </div>
 
-    <!-- カテゴリ（動的に注入） -->
+    <!-- メニュー表示エリア -->
     <div id="categories"></div>
 
+    <!-- 備考 -->
     <div class="row">
-      <label for="note">備考（任意）</label>
-      <textarea id="note" placeholder="アレルギー、提供タイミングなど自由に記述ください"></textarea>
+      <label>備考（任意）</label>
+      <textarea id="note" placeholder="自由に記述してください"></textarea>
     </div>
 
-    <button class="btn" id="submitBtn">注文内容確認</button>
+    <button class="btn" id="confirmBtn">注文内容確認</button>
+    <div id="confirmArea"></div>
+
+    <button class="btn" id="submitBtn" style="display:none">送信！</button>
+
     <div id="result"></div>
-  </div>
-</div>
 
-<!-- 確認モーダル -->
-<div class="modal-backdrop" id="confirmBackdrop" aria-hidden="true">
-  <div class="modal" role="dialog" aria-modal="true" aria-labelledby="confirmTitle">
-    <h2 id="confirmTitle">注文内容の確認</h2>
-    <div class="content" id="confirmContent"></div>
-    <div class="actions">
-      <button class="btn-secondary" id="editBtn">戻って修正</button>
-      <button class="btn-primary" id="confirmBtn">この内容で送信</button>
-    </div>
-  </div>
-</div>
-
-<!-- 完了モーダル -->
-<div class="modal-backdrop" id="doneBackdrop" aria-hidden="true">
-  <div class="modal" role="dialog" aria-modal="true" aria-labelledby="doneTitle">
-    <h2 id="doneTitle">注文が完了しました 🎉</h2>
-    <div class="content center">ありがとうございました！<br>受付が完了しました。</div>
-    <div class="actions"><button class="btn-primary" id="okBtn">OK</button></div>
   </div>
 </div>
 
 <script>
-/** ★Cloudflare Workers のURL（→ WorkersがGASへ中継） */
-const GAS_URL = "https://mute-forest-8746.matsuno12199.workers.dev/";
+/*****************************************
+ * API URL（Workers）
+ *****************************************/
+const API_MENU  = "https://mute-forest-8746.matsuno12199.workers.dev/menu";
+const API_ORDER = "https://mute-forest-8746.matsuno12199.workers.dev/order";
 
-let PRICES = null; // GASから取得して使う
+let MENU = {}; // 取得したメニュー保持
 
-/* ====== メニュー取得 → UI構築 ====== */
-async function fetchMenu() {
-  const url = GAS_URL + "?fn=menu";
-  const res = await fetch(url, { method: 'GET' });
+/*****************************************
+ * メニュー取得
+ *****************************************/
+async function loadMenu() {
+  const r = await fetch(API_MENU);
+  const json = await r.json();
+  if (!json.success) {
+    alert("メニュー取得に失敗しました");
+    return;
+  }
+
+  MENU = json.menu;
+  renderMenu();
+}
+
+/*****************************************
+ * メニュー描画
+ *****************************************/
+function renderMenu() {
+  const area = document.getElementById("categories");
+  area.innerHTML = "";
+
+  Object.keys(MENU).forEach(cat => {
+    const catBox = document.createElement("div");
+    catBox.className = "cat";
+
+    const h = document.createElement("h3");
+    const chk = document.createElement("input");
+    chk.type = "checkbox";
+    h.append(cat, chk);
+    catBox.appendChild(h);
+
+    const itemsDiv = document.createElement("div");
+    itemsDiv.className = "items";
+
+    MENU[cat].forEach(item => {
+      const name = document.createElement("div");
+      name.textContent = `${item.name} ¥${item.price}`;
+
+      const qty = document.createElement("input");
+      qty.type = "number";
+      qty.min = 0;
+      qty.max = 9;
+      qty.value = 0;
+      qty.className = "qty";
+      qty.dataset.name = item.name;
+
+      itemsDiv.append(name, qty);
+    });
+
+    chk.addEventListener("change", () => {
+      itemsDiv.style.display = chk.checked ? "grid" : "none";
+      if (!chk.checked) {
+        itemsDiv.querySelectorAll("input").forEach(i => i.value = 0);
+      }
+    });
+
+    catBox.append(itemsDiv);
+    area.append(catBox);
+  });
+}
+
+/*****************************************
+ * 注文内容確認
+ *****************************************/
+document.getElementById("confirmBtn").onclick = () => {
+  const customerId = document.getElementById("customerId").value.trim();
+  if (!/^\d+$/.test(customerId)) return alert("お客様番号は半角数字のみ");
+
+  const orders = collectOrders();
+  if (orders.length === 0) return alert("注文がありません");
+
+  const lines = orders.map(o => `${o.name} × ${o.qty}`).join("\n");
+
+  document.getElementById("confirmArea").innerHTML =
+    `<div class="confirm-box">【注文内容】\n${lines}</div>`;
+
+  document.getElementById("submitBtn").style.display = "block";
+};
+
+
+/*****************************************
+ * 明細収集
+ *****************************************/
+function collectOrders() {
+  const arr = [];
+  document.querySelectorAll(".qty").forEach(q => {
+    if (Number(q.value) > 0) arr.push({ name: q.dataset.name, qty: Number(q.value) });
+  });
+  return arr;
+}
+
+/*****************************************
+ * 注文送信
+ *****************************************/
+document.getElementById("submitBtn").onclick = async () => {
+  const customerId = document.getElementById("customerId").value.trim();
+  const note = document.getElementById("note").value.trim();
+  const orders = collectOrders();
+  
+  const res = await fetch(API_ORDER, {
+    method:"POST",
+    headers:{ "Content-Type":"application/json" },
+    body:JSON.stringify({ customerId, note, orders })
+  });
+
   const json = await res.json();
-  if (!json.success) throw new Error(json.error || 'メニュー取得に失敗');
-  return json.menu; // {category: {item: price}}
-}
+  if (!json.success) return alert("エラー：" + json.error);
 
-const categoriesEl = document.getElementById('categories');
+  document.getElementById("result").innerHTML =
+    `🎉 今回の合計：¥${json.thisTotal}<br>💰 累計：¥${json.cumulative}`;
 
-function renderCategory(name, itemsObj) {
-  const cat = document.createElement('div');
-  cat.className = 'cat';
+  // 送信後リセット
+  document.getElementById("customerId").value = "";
+  document.getElementById("note").value = "";
+  document.querySelectorAll(".qty").forEach(q => q.value = 0);
+  document.getElementById("submitBtn").style.display = "none";
+  document.getElementById("confirmArea").innerHTML = "";
+};
 
-  const h = document.createElement('h3');
-  const checkbox = document.createElement('input');
-  checkbox.type = 'checkbox';
-  checkbox.id = `cat-${name}`;
-  h.appendChild(checkbox);
-  const label = document.createElement('span');
-  label.textContent = name;
-  h.appendChild(label);
-  cat.appendChild(h);
-
-  // ラインナップ（初期非表示）
-  const items = document.createElement('div');
-  items.className = 'items';
-
-  for (const itemName of Object.keys(itemsObj)) {
-    const price = itemsObj[itemName];
-
-    const nameEl = document.createElement('div');
-    nameEl.className = 'item-name';
-    nameEl.textContent = `${itemName} ¥${price}`;
-
-    const qty = document.createElement('input');
-    qty.type = 'number';
-    qty.min = '0';
-    qty.max = '9';
-    qty.step = '1';
-    qty.value = '0';
-    qty.className = 'qty';
-    qty.dataset.category = name;
-    qty.dataset.name = itemName;
-
-    qty.addEventListener('input', () => {
-      let v = parseInt(qty.value || '0', 10);
-      if (isNaN(v)) v = 0;
-      if (v < 0) v = 0;
-      if (v > 9) v = 9;
-      qty.value = String(v);
-    });
-
-    items.appendChild(nameEl);
-    items.appendChild(qty);
-  }
-  cat.appendChild(items);
-
-  checkbox.addEventListener('change', () => {
-    items.style.display = checkbox.checked ? 'grid' : 'none';
-    if (!checkbox.checked) {
-      items.querySelectorAll('input[type="number"]').forEach(inp => inp.value = '0');
-    }
-  });
-
-  categoriesEl.appendChild(cat);
-}
-
-function buildUIFromPrices(prices) {
-  categoriesEl.innerHTML = '';
-  for (const catName of Object.keys(prices)) {
-    renderCategory(catName, prices[catName]);
-  }
-}
-
-/* ====== 注文データ作成 & 合計計算 ====== */
-function pickOrders() {
-  const orders = [];
-  document.querySelectorAll('.qty').forEach(inp => {
-    const qty = Number(inp.value || 0);
-    if (qty > 0) {
-      const category = inp.dataset.category;
-      const name = inp.dataset.name;
-      orders.push({ category, name, qty });
-    }
-  });
-  return orders;
-}
-function calcTotal(orders) {
-  let total = 0;
-  for (const o of orders) {
-    const unit = PRICES?.[o.category]?.[o.name] || 0;
-    total += unit * o.qty;
-  }
-  return total;
-}
-
-/* ====== モーダル ====== */
-function openModal(backdrop) { backdrop.style.display = 'flex'; backdrop.setAttribute('aria-hidden', 'false'); }
-function closeModal(backdrop) { backdrop.style.display = 'none'; backdrop.setAttribute('aria-hidden', 'true'); }
-const confirmBackdrop = document.getElementById('confirmBackdrop');
-const confirmContent  = document.getElementById('confirmContent');
-const doneBackdrop    = document.getElementById('doneBackdrop');
-
-/* ====== 送信フロー ====== */
-const submitBtn = document.getElementById('submitBtn');
-const editBtn   = document.getElementById('editBtn');
-const confirmBtn= document.getElementById('confirmBtn');
-const okBtn     = document.getElementById('okBtn');
-
-submitBtn.addEventListener('click', () => {
-  const customerId = document.getElementById('customerId').value.trim();
-  if (!/^\d+$/.test(customerId)) { alert('お客様番号は半角数字のみです'); return; }
-
-  const orders = pickOrders();
-  if (orders.length === 0) { alert('注文がありません'); return; }
-
-  const note = document.getElementById('note').value.trim();
-  const total = calcTotal(orders);
-
-  const lines = orders.map(o => {
-    const unit = PRICES[o.category][o.name];
-    return `・${o.category} / ${o.name} × ${o.qty} = ¥${(unit*o.qty).toLocaleString()}`;
-  }).join('<br>');
-
-  confirmContent.innerHTML =
-    `<div><b>お客様番号：</b>${customerId}</div>` +
-    (note ? `<div><b>備考：</b>${note}</div>` : '') +
-    `<hr><div>${lines}</div><hr>` +
-    `<div class="center"><b>合計：</b>¥${total.toLocaleString()}</div>`;
-
-  openModal(confirmBackdrop);
-});
-document.getElementById('editBtn').addEventListener('click', () => closeModal(confirmBackdrop));
-
-document.getElementById('confirmBtn').addEventListener('click', async () => {
-  closeModal(confirmBackdrop);
-  const customerId = document.getElementById('customerId').value.trim();
-  const orders = pickOrders();
-  const note = document.getElementById('note').value.trim();
-
-  const resultEl = document.getElementById('result');
-  resultEl.textContent = '送信中…';
-
-  try {
-    const res = await fetch(GAS_URL, {
-      method: 'POST', headers: { 'Content-Type': 'application/json' },
-      body: JSON.stringify({ customerId, orders, note })
-    });
-    const json = await res.json();
-    if (json.nonJson) {
-      resultEl.innerHTML = 'サーバ側でエラーが発生しました。';
-      return;
-    }
-    if (json.success) {
-      resultEl.innerHTML =
-        `🎉 <b>今回の合計：</b> ¥${Number(json.thisTotal).toLocaleString()}<br>` +
-        `💰 <b>これまでの累計：</b> ¥${Number(json.cumulative).toLocaleString()}`;
-      openModal(doneBackdrop);
-    } else {
-      resultEl.textContent = 'エラー：' + (json.error || 'unknown');
-    }
-  } catch (err) {
-    resultEl.textContent = '通信エラー：' + err.message;
-  }
-});
-document.getElementById('okBtn').addEventListener('click', () => { closeModal(doneBackdrop); resetForm(); });
-
-function resetForm() {
-  document.getElementById('customerId').value = '';
-  document.getElementById('note').value = '';
-  document.getElementById('result').textContent = '';
-  document.querySelectorAll('.cat input[type="checkbox"]').forEach(cb => { cb.checked = false; });
-  document.querySelectorAll('.items').forEach(items => {
-    items.style.display = 'none';
-    items.querySelectorAll('input[type="number"]').forEach(inp => inp.value = '0');
-  });
-}
-
-/* ====== 初期化：メニュー取得してUI生成 ====== */
-(async () => {
-  try {
-    PRICES = await fetchMenu();
-    buildUIFromPrices(PRICES);
-  } catch (e) {
-    document.getElementById('categories').innerHTML =
-      `<div class="muted">メニュー取得に失敗しました: ${e.message}</div>`;
-  }
-})();
+/*****************************************
+ * 初回ロード
+ *****************************************/
+loadMenu();
 </script>
 </body>
 </html>
