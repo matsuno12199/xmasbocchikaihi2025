@@ -121,17 +121,18 @@
 /*****************************************
  * API URL（Workers）
  *****************************************/
-const API_MENU  = "https://mute-forest-8746.matsuno12199.workers.dev/menu";
-const API_ORDER = "https://mute-forest-8746.matsuno12199.workers.dev/order";
-
-let MENU = {}; // 取得したメニュー保持
+const API_MENU  = "https://mute-forest-8746.matsuno12199.workers.dev/?mode=menu";
+const API_ORDER = "https://mute-forest-8746.matsuno12199.workers.dev/";
 
 /*****************************************
- * メニュー取得
+ * メニュー読み込み
  *****************************************/
+let MENU = {};
+
 async function loadMenu() {
   const r = await fetch(API_MENU);
   const json = await r.json();
+
   if (!json.success) {
     alert("メニュー取得に失敗しました");
     return;
@@ -189,6 +190,17 @@ function renderMenu() {
 }
 
 /*****************************************
+ * 明細収集
+ *****************************************/
+function collectOrders() {
+  const arr = [];
+  document.querySelectorAll(".qty").forEach(q => {
+    if (Number(q.value) > 0) arr.push({ name: q.dataset.name, qty: Number(q.value) });
+  });
+  return arr;
+}
+
+/*****************************************
  * 注文内容確認
  *****************************************/
 document.getElementById("confirmBtn").onclick = () => {
@@ -206,18 +218,6 @@ document.getElementById("confirmBtn").onclick = () => {
   document.getElementById("submitBtn").style.display = "block";
 };
 
-
-/*****************************************
- * 明細収集
- *****************************************/
-function collectOrders() {
-  const arr = [];
-  document.querySelectorAll(".qty").forEach(q => {
-    if (Number(q.value) > 0) arr.push({ name: q.dataset.name, qty: Number(q.value) });
-  });
-  return arr;
-}
-
 /*****************************************
  * 注文送信
  *****************************************/
@@ -225,7 +225,7 @@ document.getElementById("submitBtn").onclick = async () => {
   const customerId = document.getElementById("customerId").value.trim();
   const note = document.getElementById("note").value.trim();
   const orders = collectOrders();
-  
+
   const res = await fetch(API_ORDER, {
     method:"POST",
     headers:{ "Content-Type":"application/json" },
@@ -238,7 +238,7 @@ document.getElementById("submitBtn").onclick = async () => {
   document.getElementById("result").innerHTML =
     `🎉 今回の合計：¥${json.thisTotal}<br>💰 累計：¥${json.cumulative}`;
 
-  // 送信後リセット
+  // リセット
   document.getElementById("customerId").value = "";
   document.getElementById("note").value = "";
   document.querySelectorAll(".qty").forEach(q => q.value = 0);
@@ -251,5 +251,6 @@ document.getElementById("submitBtn").onclick = async () => {
  *****************************************/
 loadMenu();
 </script>
+
 </body>
 </html>
