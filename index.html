@@ -20,7 +20,7 @@
   body {
     margin:0;
     background:var(--bg);
-    font-family: "Nunito", "ヒラギノ角ゴ ProN", "Meiryo", sans-serif;
+    font-family:"Nunito","ヒラギノ角ゴ ProN","Meiryo",sans-serif;
     color:var(--txt);
   }
 
@@ -63,7 +63,11 @@
     font-size:16px;
     box-sizing:border-box;
   }
-  textarea { min-height:80px; resize:vertical; }
+
+  textarea {
+    min-height:80px;
+    resize:vertical;
+  }
 
   /* --- 商品カテゴリ --- */
   .cat {
@@ -81,8 +85,7 @@
     display:flex;
     justify-content:space-between;
     align-items:center;
-    padding:2px 4px;
-    white-space:nowrap; /* ← 改行防止 */
+    white-space:nowrap;
   }
 
   .cat h3 span {
@@ -93,7 +96,7 @@
   .cat input[type="checkbox"] {
     width:22px;
     height:22px;
-    accent-color: var(--accent-green);
+    accent-color:var(--accent-green);
   }
 
   .items {
@@ -113,10 +116,9 @@
     font-size:15px;
   }
 
-  /* ボタン */
   .btn {
     width:100%;
-    background:linear-gradient(135deg, var(--accent-red), var(--accent-green));
+    background:linear-gradient(135deg,var(--accent-red),var(--accent-green));
     color:#fff;
     padding:14px;
     border:none;
@@ -134,7 +136,6 @@
     color:var(--accent-green);
   }
 
-  /* 注文確認 */
   .confirm-box {
     white-space:pre-wrap;
     padding:12px;
@@ -178,11 +179,8 @@
 /*****************************************
  * API URL（Workers）
  *****************************************/
-const API_MENU  = "https://mute-forest-8746.matsuno12199.workers.dev/menu";
-const API_ORDER = "https://mute-forest-8746.matsuno12199.workers.dev/order";
-
-let MENU = {}; // メニュー保持
-
+const API_MENU  = "https://mute-forest-8746.matsuno12199.workers.dev?mode=menu";
+const API_ORDER = "https://mute-forest-8746.matsuno12199.workers.dev";
 
 /*****************************************
  * メニュー取得
@@ -197,26 +195,23 @@ async function loadMenu() {
       return;
     }
 
-    MENU = json.menu;
-    renderMenu();
-  } catch (e) {
+    renderMenu(json.menu);
+  } catch (err) {
     alert("メニュー取得に失敗しました");
   }
 }
 
-
 /*****************************************
  * メニュー描画
  *****************************************/
-function renderMenu() {
+function renderMenu(menu) {
   const area = document.getElementById("categories");
   area.innerHTML = "";
 
-  Object.keys(MENU).forEach(cat => {
+  Object.keys(menu).forEach(cat => {
     const catBox = document.createElement("div");
     catBox.className = "cat";
 
-    // --- 見出し -----------------------------------
     const h = document.createElement("h3");
 
     const title = document.createElement("span");
@@ -229,11 +224,10 @@ function renderMenu() {
     h.appendChild(chk);
     catBox.appendChild(h);
 
-    // --- 明細 -----------------------------------
     const itemsDiv = document.createElement("div");
     itemsDiv.className = "items";
 
-    MENU[cat].forEach(i => {
+    menu[cat].forEach(i => {
       const name = document.createElement("div");
       name.textContent = `${i.name} ¥${i.price}`;
 
@@ -260,15 +254,25 @@ function renderMenu() {
   });
 }
 
+/*****************************************
+ * 注文収集
+ *****************************************/
+function collectOrders() {
+  const arr = [];
+  document.querySelectorAll(".qty").forEach(q => {
+    if (Number(q.value) > 0) arr.push({ name: q.dataset.name, qty: Number(q.value) });
+  });
+  return arr;
+}
 
 /*****************************************
  * 注文内容確認
  *****************************************/
 document.getElementById("confirmBtn").onclick = () => {
-  const customerId = document.getElementById("customerId").value.trim();
-  if (!/^\d+$/.test(customerId)) return alert("お客様番号は半角数字のみ");
-
   const orders = collectOrders();
+  const customerId = document.getElementById("customerId").value.trim();
+
+  if (!/^\d+$/.test(customerId)) return alert("お客様番号は半角数字のみ");
   if (orders.length === 0) return alert("注文がありません");
 
   const lines = orders.map(o => `${o.name} × ${o.qty}`).join("\n");
@@ -279,19 +283,6 @@ document.getElementById("confirmBtn").onclick = () => {
   document.getElementById("submitBtn").style.display = "block";
 };
 
-
-/*****************************************
- * 明細収集
- *****************************************/
-function collectOrders() {
-  const arr = [];
-  document.querySelectorAll(".qty").forEach(q => {
-    if (Number(q.value) > 0) arr.push({ name: q.dataset.name, qty: Number(q.value) });
-  });
-  return arr;
-}
-
-
 /*****************************************
  * 注文送信
  *****************************************/
@@ -300,13 +291,13 @@ document.getElementById("submitBtn").onclick = async () => {
   const note = document.getElementById("note").value.trim();
   const orders = collectOrders();
 
-  const res = await fetch(API_ORDER, {
-    method:"POST",
-    headers:{ "Content-Type":"application/json" },
-    body:JSON.stringify({ customerId, note, orders })
+  const r = await fetch(API_ORDER, {
+    method: "POST",
+    headers: { "Content-Type": "application/json" },
+    body: JSON.stringify({ customerId, note, orders })
   });
 
-  const json = await res.json();
+  const json = await r.json();
   if (!json.success) return alert("エラー：" + json.error);
 
   document.getElementById("result").innerHTML =
@@ -316,10 +307,9 @@ document.getElementById("submitBtn").onclick = async () => {
   document.getElementById("customerId").value = "";
   document.getElementById("note").value = "";
   document.querySelectorAll(".qty").forEach(q => q.value = 0);
-  document.getElementById("submitBtn").style.display = "none";
   document.getElementById("confirmArea").innerHTML = "";
+  document.getElementById("submitBtn").style.display = "none";
 };
-
 
 /*****************************************
  * 初回ロード
