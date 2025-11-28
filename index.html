@@ -69,7 +69,7 @@
     resize:vertical;
   }
 
-  /* --- 商品カテゴリ --- */
+  /* --- カテゴリ --- */
   .cat {
     border:2px dashed var(--accent-green);
     border-radius:12px;
@@ -144,10 +144,42 @@
     border:2px solid var(--accent-green);
     margin-top:12px;
   }
+
+  /* --- ローディング（雪だるま） --- */
+  #loading {
+    display:none;
+    position:fixed;
+    top:0; left:0; right:0; bottom:0;
+    background:rgba(255,255,255,0.8);
+    backdrop-filter:blur(3px);
+    z-index:999;
+    justify-content:center;
+    align-items:center;
+    flex-direction:column;
+    font-size:20px;
+    color:var(--accent-green);
+  }
+
+  .snowman {
+    font-size:60px;
+    animation:spin 1.2s linear infinite;
+  }
+  @keyframes spin {
+    0% { transform:rotate(0deg); }
+    100% { transform:rotate(360deg); }
+  }
+
 </style>
 </head>
 
 <body>
+
+<!-- ローディング -->
+<div id="loading">
+  <div class="snowman">⛄</div>
+  <div>読み込み中…</div>
+</div>
+
 <div class="wrap">
   <div class="card">
 
@@ -177,21 +209,33 @@
 
 <script>
 /*****************************************
- * API URL（Workers）
+ * API URL
  *****************************************/
 const API_MENU  = "https://mute-forest-8746.matsuno12199.workers.dev?mode=menu";
 const API_ORDER = "https://mute-forest-8746.matsuno12199.workers.dev";
 
 /*****************************************
+ * ローディング表示 & 非表示
+ *****************************************/
+function showLoading() {
+  document.getElementById("loading").style.display = "flex";
+}
+function hideLoading() {
+  document.getElementById("loading").style.display = "none";
+}
+
+/*****************************************
  * メニュー取得
  *****************************************/
 async function loadMenu() {
+  showLoading();
   try {
     const r = await fetch(API_MENU);
     const json = await r.json();
 
     if (!json.success) {
       alert("メニュー取得に失敗しました");
+      hideLoading();
       return;
     }
 
@@ -199,6 +243,7 @@ async function loadMenu() {
   } catch (err) {
     alert("メニュー取得に失敗しました");
   }
+  hideLoading();
 }
 
 /*****************************************
@@ -291,11 +336,13 @@ document.getElementById("submitBtn").onclick = async () => {
   const note = document.getElementById("note").value.trim();
   const orders = collectOrders();
 
+  showLoading();
   const r = await fetch(API_ORDER, {
     method: "POST",
     headers: { "Content-Type": "application/json" },
     body: JSON.stringify({ customerId, note, orders })
   });
+  hideLoading();
 
   const json = await r.json();
   if (!json.success) return alert("エラー：" + json.error);
@@ -303,10 +350,22 @@ document.getElementById("submitBtn").onclick = async () => {
   document.getElementById("result").innerHTML =
     `🎉 今回の合計：¥${json.thisTotal}<br>💰 累計：¥${json.cumulative}`;
 
-  // リセット
+  /*****************************************
+   * 完全初期化
+   *****************************************/
   document.getElementById("customerId").value = "";
   document.getElementById("note").value = "";
+
+  // 数量リセット
   document.querySelectorAll(".qty").forEach(q => q.value = 0);
+
+  // カテゴリチェック解除
+  document.querySelectorAll(".cat input[type='checkbox']").forEach(c => c.checked = false);
+
+  // 明細閉じる
+  document.querySelectorAll(".items").forEach(i => i.style.display = "none");
+
+  // 確認欄と送信ボタンを消す
   document.getElementById("confirmArea").innerHTML = "";
   document.getElementById("submitBtn").style.display = "none";
 };
