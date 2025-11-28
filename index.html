@@ -284,6 +284,14 @@ function renderMenu(menu) {
       qty.className = "qty";
       qty.dataset.name = i.name;
 
+      /* ★ここが新規追加：絶対に 0〜9 から外れない */
+      qty.addEventListener("input", () => {
+        let v = Number(qty.value);
+        if (isNaN(v) || v < 0) v = 0;
+        if (v > 9) v = 9;
+        qty.value = v;
+      });
+
       itemsDiv.append(name, qty);
     });
 
@@ -350,22 +358,14 @@ document.getElementById("submitBtn").onclick = async () => {
   document.getElementById("result").innerHTML =
     `🎉 今回の合計：¥${json.thisTotal}<br>💰 累計：¥${json.cumulative}`;
 
-  /*****************************************
-   * 完全初期化
-   *****************************************/
+  /* --- 完全初期化 --- */
   document.getElementById("customerId").value = "";
   document.getElementById("note").value = "";
 
-  // 数量リセット
   document.querySelectorAll(".qty").forEach(q => q.value = 0);
-
-  // カテゴリチェック解除
   document.querySelectorAll(".cat input[type='checkbox']").forEach(c => c.checked = false);
-
-  // 明細閉じる
   document.querySelectorAll(".items").forEach(i => i.style.display = "none");
 
-  // 確認欄と送信ボタンを消す
   document.getElementById("confirmArea").innerHTML = "";
   document.getElementById("submitBtn").style.display = "none";
 };
