@@ -69,7 +69,7 @@
     resize:vertical;
   }
 
-  /* --- カテゴリ --- */
+  /* --- カテゴリカード --- */
   .cat {
     border:2px dashed var(--accent-green);
     border-radius:12px;
@@ -114,6 +114,40 @@
     border:1px solid var(--border);
     border-radius:8px;
     font-size:15px;
+  }
+
+  /* キャストドリンクの中のブロック */
+  .cast-type-block {
+    border:1px solid var(--border);
+    border-radius:8px;
+    padding:8px;
+    margin-top:8px;
+    background:#ffffff;
+  }
+  .cast-type-header {
+    display:flex;
+    justify-content:space-between;
+    align-items:center;
+    font-size:14px;
+    font-weight:600;
+  }
+  .cast-type-header span {
+    flex-grow:1;
+    padding-right:8px;
+  }
+  .cast-list {
+    display:none;
+    margin-top:6px;
+  }
+  .cast-row {
+    display:flex;
+    justify-content:space-between;
+    align-items:center;
+    margin:4px 0;
+    font-size:14px;
+  }
+  .cast-row span {
+    margin-right:8px;
   }
 
   .btn {
@@ -168,7 +202,6 @@
     0% { transform:rotate(0deg); }
     100% { transform:rotate(360deg); }
   }
-
 </style>
 </head>
 
@@ -209,10 +242,14 @@
 
 <script>
 /*****************************************
- * API URL
+ * API URL（Workers）
  *****************************************/
-const API_MENU  = "https://mute-forest-8746.matsuno12199.workers.dev?mode=menu";
-const API_ORDER = "https://mute-forest-8746.matsuno12199.workers.dev";
+const API_BASE  = "https://mute-forest-8746.matsuno12199.workers.dev";
+const API_MENU  = API_BASE + "?mode=menu";
+const API_ORDER = API_BASE;
+
+let GLOBAL_MENU  = {};
+let GLOBAL_CASTS = [];
 
 /*****************************************
  * ローディング表示 & 非表示
@@ -239,7 +276,9 @@ async function loadMenu() {
       return;
     }
 
-    renderMenu(json.menu);
+    GLOBAL_MENU  = json.menu || {};
+    GLOBAL_CASTS = json.casts || [];
+    renderMenu();
   } catch (err) {
     alert("メニュー取得に失敗しました");
   }
@@ -249,32 +288,121 @@ async function loadMenu() {
 /*****************************************
  * メニュー描画
  *****************************************/
-function renderMenu(menu) {
+function renderMenu() {
   const area = document.getElementById("categories");
   area.innerHTML = "";
 
-  Object.keys(menu).forEach(cat => {
-    const catBox = document.createElement("div");
-    catBox.className = "cat";
+  Object.keys(GLOBAL_MENU).forEach(cat => {
+    if (cat === "キャストドリンク") {
+      renderCastDrinkCategory(area, cat, GLOBAL_MENU[cat], GLOBAL_CASTS);
+    } else {
+      renderNormalCategory(area, cat, GLOBAL_MENU[cat]);
+    }
+  });
+}
 
-    const h = document.createElement("h3");
+/* 通常カテゴリ（ソフトドリンクなど） */
+function renderNormalCategory(parent, catName, items) {
+  const catBox = document.createElement("div");
+  catBox.className = "cat";
 
-    const title = document.createElement("span");
-    title.textContent = cat;
+  const h = document.createElement("h3");
+  const title = document.createElement("span");
+  title.textContent = catName;
 
-    const chk = document.createElement("input");
-    chk.type = "checkbox";
+  const chk = document.createElement("input");
+  chk.type = "checkbox";
 
-    h.appendChild(title);
-    h.appendChild(chk);
-    catBox.appendChild(h);
+  h.appendChild(title);
+  h.appendChild(chk);
+  catBox.appendChild(h);
 
-    const itemsDiv = document.createElement("div");
-    itemsDiv.className = "items";
+  const itemsDiv = document.createElement("div");
+  itemsDiv.className = "items";
 
-    menu[cat].forEach(i => {
-      const name = document.createElement("div");
-      name.textContent = `${i.name} ¥${i.price}`;
+  items.forEach(i => {
+    const name = document.createElement("div");
+    name.textContent = `${i.name} ¥${i.price}`;
+
+    const qty = document.createElement("input");
+    qty.type = "number";
+    qty.min = 0;
+    qty.max = 9;
+    qty.value = 0;
+    qty.className = "qty";
+    qty.dataset.kind = "normal";
+    qty.dataset.category = catName;
+    qty.dataset.name = i.name;
+
+    // 0〜9から絶対に外れないようにする
+    qty.addEventListener("input", () => {
+      let v = Number(qty.value);
+      if (isNaN(v) || v < 0) v = 0;
+      if (v > 9) v = 9;
+      qty.value = v;
+    });
+
+    itemsDiv.append(name, qty);
+  });
+
+  chk.addEventListener("change", () => {
+    itemsDiv.style.display = chk.checked ? "grid" : "none";
+    if (!chk.checked) {
+      itemsDiv.querySelectorAll("input").forEach(i => i.value = 0);
+    }
+  });
+
+  catBox.appendChild(itemsDiv);
+  parent.appendChild(catBox);
+}
+
+/* キャストドリンクカテゴリ */
+function renderCastDrinkCategory(parent, catName, items, casts) {
+  const catBox = document.createElement("div");
+  catBox.className = "cat";
+
+  const h = document.createElement("h3");
+  const title = document.createElement("span");
+  title.textContent = catName;
+
+  const chk = document.createElement("input");
+  chk.type = "checkbox";
+
+  h.appendChild(title);
+  h.appendChild(chk);
+  catBox.appendChild(h);
+
+  const itemsWrapper = document.createElement("div");
+  itemsWrapper.className = "items";
+
+  // 「キャストドリンク」の中の 各種別（ソフトドリンク / アルコール など）
+  items.forEach(i => {
+    const typeBlock = document.createElement("div");
+    typeBlock.className = "cast-type-block";
+
+    const header = document.createElement("div");
+    header.className = "cast-type-header";
+
+    const typeLabel = document.createElement("span");
+    typeLabel.textContent = `${i.name} ¥${i.price}`;
+
+    const typeChk = document.createElement("input");
+    typeChk.type = "checkbox";
+
+    header.appendChild(typeLabel);
+    header.appendChild(typeChk);
+    typeBlock.appendChild(header);
+
+    const castList = document.createElement("div");
+    castList.className = "cast-list";
+
+    // 各キャストごとに数量欄
+    casts.forEach(castName => {
+      const row = document.createElement("div");
+      row.className = "cast-row";
+
+      const castLabel = document.createElement("span");
+      castLabel.textContent = castName;
 
       const qty = document.createElement("input");
       qty.type = "number";
@@ -282,9 +410,11 @@ function renderMenu(menu) {
       qty.max = 9;
       qty.value = 0;
       qty.className = "qty";
-      qty.dataset.name = i.name;
+      qty.dataset.kind = "cast";
+      qty.dataset.category = catName;
+      qty.dataset.type = i.name;      // ソフトドリンク / アルコール
+      qty.dataset.cast = castName;    // キャスト名
 
-      /* ★ここが新規追加：絶対に 0〜9 から外れない */
       qty.addEventListener("input", () => {
         let v = Number(qty.value);
         if (isNaN(v) || v < 0) v = 0;
@@ -292,19 +422,41 @@ function renderMenu(menu) {
         qty.value = v;
       });
 
-      itemsDiv.append(name, qty);
+      row.appendChild(castLabel);
+      row.appendChild(qty);
+      castList.appendChild(row);
     });
 
-    chk.addEventListener("change", () => {
-      itemsDiv.style.display = chk.checked ? "grid" : "none";
-      if (!chk.checked) {
-        itemsDiv.querySelectorAll("input").forEach(i => i.value = 0);
+    // 種別チェックONでこのcastListだけ表示
+    typeChk.addEventListener("change", () => {
+      castList.style.display = typeChk.checked ? "block" : "none";
+      if (!typeChk.checked) {
+        castList.querySelectorAll("input").forEach(inp => inp.value = 0);
       }
     });
 
-    catBox.appendChild(itemsDiv);
-    area.appendChild(catBox);
+    typeBlock.appendChild(castList);
+    itemsWrapper.appendChild(typeBlock);
   });
+
+  // カテゴリレベルのチェックで itemsWrapper を開閉
+  chk.addEventListener("change", () => {
+    itemsWrapper.style.display = chk.checked ? "block" : "none";
+    if (!chk.checked) {
+      // 中の種別チェックもリセット
+      itemsWrapper.querySelectorAll("input[type='checkbox']").forEach(c => {
+        c.checked = false;
+      });
+      // 数量0 & castList非表示
+      itemsWrapper.querySelectorAll(".qty").forEach(q => q.value = 0);
+      itemsWrapper.querySelectorAll(".cast-list").forEach(cl => {
+        cl.style.display = "none";
+      });
+    }
+  });
+
+  catBox.appendChild(itemsWrapper);
+  parent.appendChild(catBox);
 }
 
 /*****************************************
@@ -313,7 +465,27 @@ function renderMenu(menu) {
 function collectOrders() {
   const arr = [];
   document.querySelectorAll(".qty").forEach(q => {
-    if (Number(q.value) > 0) arr.push({ name: q.dataset.name, qty: Number(q.value) });
+    const v = Number(q.value || 0);
+    if (v <= 0) return;
+
+    const kind = q.dataset.kind;
+
+    if (kind === "cast") {
+      // キャストドリンク専用
+      arr.push({
+        category: q.dataset.category, // "キャストドリンク"
+        type:     q.dataset.type,     // ソフトドリンク / アルコール
+        cast:     q.dataset.cast,
+        qty:      v
+      });
+    } else {
+      // 通常ドリンク
+      arr.push({
+        category: q.dataset.category,
+        name:     q.dataset.name,
+        qty:      v
+      });
+    }
   });
   return arr;
 }
@@ -322,13 +494,26 @@ function collectOrders() {
  * 注文内容確認
  *****************************************/
 document.getElementById("confirmBtn").onclick = () => {
-  const orders = collectOrders();
   const customerId = document.getElementById("customerId").value.trim();
+  if (!/^\d+$/.test(customerId)) {
+    alert("お客様番号は半角数字のみ");
+    return;
+  }
 
-  if (!/^\d+$/.test(customerId)) return alert("お客様番号は半角数字のみ");
-  if (orders.length === 0) return alert("注文がありません");
+  const orders = collectOrders();
+  if (orders.length === 0) {
+    alert("注文がありません");
+    return;
+  }
 
-  const lines = orders.map(o => `${o.name} × ${o.qty}`).join("\n");
+  // 表示用にテキスト整形
+  const lines = orders.map(o => {
+    if (o.category === "キャストドリンク") {
+      return `【キャスト】${o.cast}：${o.type} × ${o.qty}`;
+    } else {
+      return `${o.name} × ${o.qty}`;
+    }
+  }).join("\n");
 
   document.getElementById("confirmArea").innerHTML =
     `<div class="confirm-box">【注文内容】\n${lines}</div>`;
@@ -341,33 +526,49 @@ document.getElementById("confirmBtn").onclick = () => {
  *****************************************/
 document.getElementById("submitBtn").onclick = async () => {
   const customerId = document.getElementById("customerId").value.trim();
-  const note = document.getElementById("note").value.trim();
-  const orders = collectOrders();
+  const note       = document.getElementById("note").value.trim();
+  const orders     = collectOrders();
+
+  if (!/^\d+$/.test(customerId)) {
+    alert("お客様番号は半角数字のみ");
+    return;
+  }
+  if (orders.length === 0) {
+    alert("注文がありません");
+    return;
+  }
 
   showLoading();
-  const r = await fetch(API_ORDER, {
-    method: "POST",
-    headers: { "Content-Type": "application/json" },
-    body: JSON.stringify({ customerId, note, orders })
-  });
+  try {
+    const r = await fetch(API_ORDER, {
+      method: "POST",
+      headers: { "Content-Type": "application/json" },
+      body: JSON.stringify({ customerId, note, orders })
+    });
+    const json = await r.json();
+    if (!json.success) {
+      alert("エラー：" + (json.error || "unknown"));
+      hideLoading();
+      return;
+    }
+
+    document.getElementById("result").innerHTML =
+      `🎉 今回の合計：¥${json.thisTotal}<br>💰 累計：¥${json.cumulative}`;
+
+    // 完全初期化
+    document.getElementById("customerId").value = "";
+    document.getElementById("note").value = "";
+    document.querySelectorAll(".qty").forEach(q => q.value = 0);
+    document.querySelectorAll(".cat input[type='checkbox']").forEach(c => c.checked = false);
+    document.querySelectorAll(".items").forEach(i => i.style.display = "none");
+    document.querySelectorAll(".cast-list").forEach(cl => cl.style.display = "none");
+    document.getElementById("confirmArea").innerHTML = "";
+    document.getElementById("submitBtn").style.display = "none";
+
+  } catch (err) {
+    alert("通信エラー：" + err.message);
+  }
   hideLoading();
-
-  const json = await r.json();
-  if (!json.success) return alert("エラー：" + json.error);
-
-  document.getElementById("result").innerHTML =
-    `🎉 今回の合計：¥${json.thisTotal}<br>💰 累計：¥${json.cumulative}`;
-
-  /* --- 完全初期化 --- */
-  document.getElementById("customerId").value = "";
-  document.getElementById("note").value = "";
-
-  document.querySelectorAll(".qty").forEach(q => q.value = 0);
-  document.querySelectorAll(".cat input[type='checkbox']").forEach(c => c.checked = false);
-  document.querySelectorAll(".items").forEach(i => i.style.display = "none");
-
-  document.getElementById("confirmArea").innerHTML = "";
-  document.getElementById("submitBtn").style.display = "none";
 };
 
 /*****************************************
