@@ -247,7 +247,6 @@
 const API_MENU  = "https://mute-forest-8746.matsuno12199.workers.dev/menu";
 const API_ORDER = "https://mute-forest-8746.matsuno12199.workers.dev/order";
 
-
 let GLOBAL_MENU  = {};
 let GLOBAL_CASTS = [];
 
@@ -328,13 +327,12 @@ function renderNormalCategory(parent, catName, items) {
     qty.type = "number";
     qty.min = 0;
     qty.max = 9;
-    qty.value = 0;
+    /* qty.value = 0; ←削除済み */
     qty.className = "qty";
     qty.dataset.kind = "normal";
     qty.dataset.category = catName;
     qty.dataset.name = i.name;
 
-    // 0〜9から絶対に外れないようにする
     qty.addEventListener("input", () => {
       let v = Number(qty.value);
       if (isNaN(v) || v < 0) v = 0;
@@ -348,7 +346,7 @@ function renderNormalCategory(parent, catName, items) {
   chk.addEventListener("change", () => {
     itemsDiv.style.display = chk.checked ? "grid" : "none";
     if (!chk.checked) {
-      itemsDiv.querySelectorAll("input").forEach(i => i.value = 0);
+      itemsDiv.querySelectorAll("input").forEach(i => i.value = "");
     }
   });
 
@@ -375,7 +373,6 @@ function renderCastDrinkCategory(parent, catName, items, casts) {
   const itemsWrapper = document.createElement("div");
   itemsWrapper.className = "items";
 
-  // 「キャストドリンク」の中の 各種別（ソフトドリンク / アルコール など）
   items.forEach(i => {
     const typeBlock = document.createElement("div");
     typeBlock.className = "cast-type-block";
@@ -396,7 +393,6 @@ function renderCastDrinkCategory(parent, catName, items, casts) {
     const castList = document.createElement("div");
     castList.className = "cast-list";
 
-    // 各キャストごとに数量欄
     casts.forEach(castName => {
       const row = document.createElement("div");
       row.className = "cast-row";
@@ -408,12 +404,12 @@ function renderCastDrinkCategory(parent, catName, items, casts) {
       qty.type = "number";
       qty.min = 0;
       qty.max = 9;
-      qty.value = 0;
+      /* qty.value = 0; ←削除済み */
       qty.className = "qty";
       qty.dataset.kind = "cast";
       qty.dataset.category = catName;
-      qty.dataset.type = i.name;      // ソフトドリンク / アルコール
-      qty.dataset.cast = castName;    // キャスト名
+      qty.dataset.type = i.name;
+      qty.dataset.cast = castName;
 
       qty.addEventListener("input", () => {
         let v = Number(qty.value);
@@ -427,11 +423,10 @@ function renderCastDrinkCategory(parent, catName, items, casts) {
       castList.appendChild(row);
     });
 
-    // 種別チェックONでこのcastListだけ表示
     typeChk.addEventListener("change", () => {
       castList.style.display = typeChk.checked ? "block" : "none";
       if (!typeChk.checked) {
-        castList.querySelectorAll("input").forEach(inp => inp.value = 0);
+        castList.querySelectorAll("input").forEach(inp => inp.value = "");
       }
     });
 
@@ -439,19 +434,14 @@ function renderCastDrinkCategory(parent, catName, items, casts) {
     itemsWrapper.appendChild(typeBlock);
   });
 
-  // カテゴリレベルのチェックで itemsWrapper を開閉
   chk.addEventListener("change", () => {
     itemsWrapper.style.display = chk.checked ? "block" : "none";
     if (!chk.checked) {
-      // 中の種別チェックもリセット
       itemsWrapper.querySelectorAll("input[type='checkbox']").forEach(c => {
         c.checked = false;
       });
-      // 数量0 & castList非表示
-      itemsWrapper.querySelectorAll(".qty").forEach(q => q.value = 0);
-      itemsWrapper.querySelectorAll(".cast-list").forEach(cl => {
-        cl.style.display = "none";
-      });
+      itemsWrapper.querySelectorAll(".qty").forEach(q => q.value = "");
+      itemsWrapper.querySelectorAll(".cast-list").forEach(cl => cl.style.display = "none");
     }
   });
 
@@ -471,15 +461,13 @@ function collectOrders() {
     const kind = q.dataset.kind;
 
     if (kind === "cast") {
-      // キャストドリンク専用
       arr.push({
-        category: q.dataset.category, // "キャストドリンク"
-        type:     q.dataset.type,     // ソフトドリンク / アルコール
+        category: q.dataset.category,
+        type:     q.dataset.type,
         cast:     q.dataset.cast,
         qty:      v
       });
     } else {
-      // 通常ドリンク
       arr.push({
         category: q.dataset.category,
         name:     q.dataset.name,
@@ -506,7 +494,6 @@ document.getElementById("confirmBtn").onclick = () => {
     return;
   }
 
-  // 表示用にテキスト整形
   const lines = orders.map(o => {
     if (o.category === "キャストドリンク") {
       return `【キャスト】${o.cast}：${o.type} × ${o.qty}`;
@@ -555,10 +542,9 @@ document.getElementById("submitBtn").onclick = async () => {
     document.getElementById("result").innerHTML =
       `🎉 今回の合計：¥${json.thisTotal}<br>💰 累計：¥${json.cumulative}`;
 
-    // 完全初期化
     document.getElementById("customerId").value = "";
     document.getElementById("note").value = "";
-    document.querySelectorAll(".qty").forEach(q => q.value = 0);
+    document.querySelectorAll(".qty").forEach(q => q.value = "");
     document.querySelectorAll(".cat input[type='checkbox']").forEach(c => c.checked = false);
     document.querySelectorAll(".items").forEach(i => i.style.display = "none");
     document.querySelectorAll(".cast-list").forEach(cl => cl.style.display = "none");
